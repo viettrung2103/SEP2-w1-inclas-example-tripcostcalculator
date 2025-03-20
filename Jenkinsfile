@@ -1,17 +1,21 @@
 pipeline {
     agent any
-     environment {
-            // Define Docker Hub credentials ID
-            DOCKERHUB_CREDENTIALS_ID = 'Docker_Hub'
-            // Define Docker Hub repository name
-            DOCKERHUB_REPO = 'amirdirin/week7_inclass_test1'
-            // Define Docker image tag
-            DOCKER_IMAGE_TAG = 'latest_v1'
-        }
+    tools {
+        maven 'Maven3'
+        jdk 'JDK 21'
+    }
+
+    environment {
+        DOCKERHUB_CREDENTIALS_ID = 'Docker_Hub'
+        DOCKERHUB_REPO = 'viettrung21/sep2-w1-inclass-example'
+        DOCKER_IMAGE_TAG = 'latest_v1'
+        // Set PATH explicitly for Jenkins
+        PATH = "/usr/local/bin:$PATH"
+    }
     stages {
         stage('Checkout') {
             steps {
-                git 'https://github.com/ADirin/SEP1_Week7_Spring2025_Inclass_solution.git'
+                git branch:"main",url:'https://github.com/viettrung2103/inclassweek7-test.git'
             }
         }
         stage('Build') {
@@ -39,24 +43,30 @@ pipeline {
                 jacoco()
             }
         }
-
-         stage('Build Docker Image') {
-                    steps {
-                        // Build Docker image
-                        script {
-                            docker.build("${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}")
-                        }
+        stage('Docker Login') {
+            steps {
+                script {
+                    withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS_ID,
+                                                     usernameVariable: 'DOCKERHUB_USER',
+                                                     passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                       sh "echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin"
                     }
                 }
-                stage('Push Docker Image to Docker Hub') {
-                    steps {
-                        // Push Docker image to Docker Hub
-                        script {
-                            docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
-                                docker.image("${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}").push()
-                            }
-                        }
-                    }
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG} ."
                 }
-    }
+            }
+        }
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    sh "docker push ${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}"
+                }
+            }
+        }
+   }
 }
