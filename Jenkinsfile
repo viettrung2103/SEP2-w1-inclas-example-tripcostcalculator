@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch:"main",url:'https://github.com/viettrung2103/inclassweek7-test.git'
+                git branch:"master",url:'https://github.com/viettrung2103/SEP2-w1-inclas-example-tripcostcalculator.git'
             }
         }
         stage('Build') {
